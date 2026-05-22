@@ -4,61 +4,95 @@ import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
-from mpl_toolkits.mplot3d import Axes3D
-#核心思路：将particle_size和pore_size进行0，1向量化，成为3维向量，然后进行聚类
-particle_df=pd.read_excel('polymer analysis\particle sizes.xlsx')
-pore_df=pd.read_excel('polymer analysis\pore size.xlsx')
-particle_long=particle_df.melt(var_name='Concentration',value_name='Value')
-particle_long['Type']='Particle Size'
-pore_long=pore_df.melt(var_name='Concentration',value_name='Value')
-pore_long['Type']='Pore Size'
-combined_df=pd.concat([particle_long,pore_long],ignore_index=True)
-combined_df['Type_Code']=combined_df['Type'].map({'Particle Size':0,'Pore Size':1})
-combined_df['Concentration']=combined_df['Concentration'].astype(float)
-features=combined_df[['Concentration','Type_Code','Value']]
-scaler=StandardScaler()
-scaled_features=scaler.fit_transform(features)
-#样本量较小，使用轮廓系数法选择聚类数量
-range_n_clusters=range(2,10)
-silhouette_scores=[]
+
+# 1. DATEN LADEN (Aus dem Labor-Verzeichnis eures Containers)
+# Wir holen die Messwerte für die Kokos-Aktivkohle und die Poren des Aerogels
+particle_df = pd.read_excel(r'polymer analysis\particle sizes.xlsx')
+pore_df = pd.read_excel(r'polymer analysis\pore size.xlsx')
+
+# 2. DATEN IN FORM BRINGEN (Die Konzentration dient als Bindeglied)
+# Wir formen die Tabellen um, damit wir sie sauber miteinander verbinden können
+particle_long = particle_df.melt(var_name='Konzentration', value_name='Partikel_Groesse')
+pore_long = pore_df.melt(var_name='Konzentration', value_name='Poren_Groesse')
+
+# Konzentrationen als Fließkommazahl (Float) angleichen für das Matching
+particle_long['Konzentration'] = particle_long['Konzentration'].astype(float)
+pore_long['Konzentration'] = pore_long['Konzentration'].astype(float)
+
+# Hier fügen wir beide Tabellen zusammen. 
+# Jeder Datenpunkt hat jetzt: [Konzentration, Partikelgröße, Porengröße]
+combined_df = pd.merge(particle_long, pore_long, on='Konzentration', how='inner')
+
+# 3. FEATURES FÜR DEN K-MEANS-ALGORITHMUS DEFINIEREN
+features = combined_df[['Konzentration', 'Partikel_Groesse', 'Poren_Groesse']]
+
+# Standardisierung: Wir bringen alle Werte auf dieselbe Skala, 
+# damit K-Means die Dimensionen fair vergleicht.
+scaler = StandardScaler()
+scaled_features = scaler.fit_transform(features)
+
+# 4. OPTIMALE ANZAHL AN CLUSTERN (K) BERECHNEN
+# Weil der Datensatz klein ist, nutzen wir den Silhouetten-Koeffizienten
+range_n_clusters = range(2, 6) # Mehr als 5 Materialzustände machen physikalisch keinen Sinn
+silhouette_scores = []
+
 for k in range_n_clusters:
-    kmeans=KMeans(n_clusters=k,random_state=42)
-    cluster_labels=kmeans.fit_predict(scaled_features)
-    score=silhouette_score(scaled_features,cluster_labels)
+    kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
+    cluster_labels = kmeans.fit_predict(scaled_features)
+    score = silhouette_score(scaled_features, cluster_labels)
     silhouette_scores.append(score)
-optimal_k=range_n_clusters[np.argmax(silhouette_scores)]
-kmeans_final=KMeans(n_clusters=optimal_k,random_state=42)
-combined_df['Cluster']=kmeans_final.fit_predict(scaled_features)
-#三维可视化操作
-fig=plt.figure(figsize=(10,7))
-ax=fig.add_subplot(111,projection='3d')
-scatter=ax.scatter(
-    combined_df['Concentration'],
-    combined_df['Type_Code'],
-    combined_df['Value'],
-    c=combined_df['Cluster'],cmap='Set1',s=50
+
+# Das mathematische Optimum für die Anzahl der Zustände (z.B. Opak, Transluzent, Transparent)
+optimal_k = range_n_clusters[np.argmax(silhouette_scores)]
+print(f"Optimaler Material-Zustand für die Matrix gefunden bei K = {optimal_k}")
+
+# Endgültige Cluster-Zuteilung berechnen
+kmeans_final = KMeans(n_clusters=optimal_k, random_state=42, n_init=10)
+combined_df['Cluster'] = kmeans_final.fit_predict(scaled_features)
+
+# 5. DREIDIMENSIONALE VISUALISIERUNG (Der physikalische Zustand im Raum)
+fig = plt.figure(figsize=(10, 7))
+ax = fig.add_subplot(111, projection='3d')
+scatter = ax.scatter(
+    combined_df['Konzentration'],
+    combined_df['Partikel_Groesse'],
+    combined_df['Poren_Groesse'],
+    c=combined_df['Cluster'], cmap='viridis', s=60, alpha=0.8
 )
-ax.set_title("Clustering")
-ax.set_xlabel('Concentration')
-ax.set_ylabel('Type Code(0=Particle size,1=Pore Size)')
-ax.set_zlabel('Value')
-plt.colorbar(scatter,label='Cluster')
+
+ax.set_title("Strukturelle Cluster des Kokos-Agar-Acrylat-Gels", fontsize=14)
+ax.set_xlabel('Alkohol-Konzentration (Methanol/IPA in %)')
+ax.set_ylabel('Aktivkohle-Partikelgröße (nm)')
+ax.set_zlabel('Aerogel-Porengröße (nm)')
+plt.colorbar(scatter, label='Material-Zustand (Cluster-ID)')
 plt.tight_layout()
+
+# Grafik als PNG für die Dokumentation im Container speichern
+plt.savefig('Clustering_Material_States.png', dpi=300)
 plt.show()
-plt.savefig('Clustering.png',dpi=300)
-#基本特征统计
-cluster_stats=combined_df.groupby(['Cluster','Type'])['Value'].agg(['count','mean','std','min','max']).reset_index()
-print(cluster_stats)
-cluster_stats.to_csv('cluster_stats.csv',index=False)
-#查看每个簇的具体数据点
-for i in range(0,optimal_k):
-    combined_data=combined_df['Cluster']==i
-    combined_data.to_csv(f"cluster_{i}_data.csv",index=False)
-#提取特定簇的数据(take cluster1 as an example,后续可以打印出来)
-cluster_2_particles=combined_df[(combined_df['Cluster']==2)&(combined_df['Type_Code']==0)]
-print(cluster_2_particles)
-#标记异常值（这里只是通过四分位方法进行分析，可以考虑结合专家知识进行参数确定）
-particle_df_only=combined_df[combined_df['Type']=='Particle Size']
-Q1=particle_df_only['Value'].quantile(0.25)
-Q3=particle_df_only['Value'].quantile(0.75)
-IQR=Q3-Q1#这部分的参数需要通过专家参数进行分析
+
+# 6. DATEN-EXPORT (Saubere Speicherung der Ergebnisse)
+# Statistische Kennwerte (Mittelwert, Standardabweichung) pro Cluster berechnen
+cluster_stats = combined_df.groupby('Cluster').agg(['count', 'mean', 'std', 'min', 'max']).reset_index()
+cluster_stats.to_csv('cluster_stats_advanced.csv', index=False)
+
+# Die echten Datenpunkte der einzelnen Cluster in separate Dateien schreiben
+# Das G13X-Board zieht sich später diese Werte für die Laser-Kalibrierung
+for i in range(optimal_k):
+    echte_cluster_daten = combined_df[combined_df['Cluster'] == i]
+    echte_cluster_daten.to_csv(f"cluster_{i}_messwerte.csv", index=False)
+
+# 7. EXPERTEN-ANOMALIEN-ERKENNUNG (Ausreißer-Filter über IQR)
+# Hier checken wir, ob beim Ablöschen mit der Asche Fehler im Gefüge entstanden sind
+Q1 = combined_df['Partikel_Groesse'].quantile(0.25)
+Q3 = combined_df['Partikel_Groesse'].quantile(0.75)
+IQR = Q3 - Q1
+untere_grenze = Q1 - 1.5 * IQR
+obere_grenze = Q3 + 1.5 * IQR
+
+# Wenn ein Punkt außerhalb der Grenzen liegt, wird er als Anomalie (1) markiert
+combined_df['Anomalie'] = np.where(
+    (combined_df['Partikel_Groesse'] < untere_grenze) | (combined_df['Partikel_Groesse'] > obere_grenze), 
+    1, 0
+)
+print(f"Strukturfehler beim Asche-Ablöschen erkannt: {combined_df['Anomalie'].sum()} Instanzen.")
