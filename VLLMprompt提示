@@ -1,31 +1,36 @@
-# 需要prompt engineering，因为笔记本内存原因跑不起来
-[角色]
-你是一名跨学科 AI for Science 材料学合作者，精通气凝胶微观结构分析、热学/力学机理推断、实验设计与统计建模。
+Hier ist die Übersetzung deiner Anfrage ins Deutsche. Ich habe den technischen Tonfall und die präzise Terminologie der Materialwissenschaften beibehalten.
 
-[输入-图像]
-- SEM 图像（多张）：<6 张气凝胶 SEM 图片>
+---
 
-# 也可以直接选取聚类边界点图片进行分析
+# Prompt-Engineering für ressourcenschonende Analyse (da mein lokaler Arbeitsspeicher keine großen Modelle zulässt)
 
-[输入-数据]
-- 来自图像处理的结构特征（像素单位，若缺标尺）：
+**[Rolle]**
+Du bist mein interdisziplinärer KI-für-Wissenschaft-Kollaborateur im Bereich Materialwissenschaften. Du bist Experte für die Analyse der Mikrostruktur von Aerogelen, die Ableitung von thermischen/mechanischen Mechanismen sowie für experimentelles Design und statistische Modellierung.
 
-#考虑之后如何在模型中直接加入表格读取？另外，如果人为提取出图像特征，是否限制了可能的未发现的机理或者相关性？
+**[Input – Bilder]**
 
-  对每张图片提供：porosity_px, pore_count, mean/median/std pore_diam_px,
-  mean_pore_circularity, mean_pore_aspect_ratio, mean_pore_solidity,
-  skeleton_length_density, skeleton_branch_points, skeleton_end_points, fractal_dimension。
+* SEM-Aufnahmen (mehrere): <6 SEM-Bilder von Aerogelen>
+*(Alternativ können direkt Bilder der Cluster-Grenzpunkte zur Analyse ausgewählt werden)*
 
-[任务]
-1) 先对每张图的结构特征进行归纳与对比，指出显著差异点与可能的结构等级（微/介/大孔特征的组合趋势）。
-2) 结合已知领域知识，提出与热导率、力学强度、比表面积等性能相关的潜在结构—性能关联（允许非线性/阈值效应）。
-3) 生成 3–5 条创新性假设，每条包含：预期科学意义、核心可验证机制、关键可控变量、可执行的实验/模拟方案（含因子设计与可测指标）。
-4) 对每条假设给出“高价值验证”的最小实验集，说明如何区分备选机理与减少不确定性。
-5) 如果缺乏物理尺度标尺，请提出基于标尺识别/标定的改进与对结果的敏感性分析。
+**[Input – Daten]**
 
-[输出格式]
-- 结构特征对比要点：
-- 潜在结构—性能关联（含机理推断）：
-- 创新性假设与验证方案（逐条）：
-- 不确定性与后续数据建议：
-- 若需：基于物理标尺后的结论可能变化：
+* Strukturmerkmale aus der Bildverarbeitung (in Pixel-Einheiten, falls kein Maßstabsbalken vorhanden ist):
+*(Überlegung: Wie lassen sich Tabellen später direkt in das Modell einlesen? Schränkt die manuelle Extraktion von Bildmerkmalen das Entdecken potenziell neuer Mechanismen oder Korrelationen ein?)*
+
+Berechne für jedes Bild: `porosity_px`, `pore_count`, `mean/median/std pore_diam_px`, `mean_pore_circularity`, `mean_pore_aspect_ratio`, `mean_pore_solidity`, `skeleton_length_density`, `skeleton_branch_points`, `skeleton_end_points`, `fractal_dimension`.
+
+**[Aufgabe]**
+
+1. Fasse die Strukturmerkmale jedes Bildes zusammen und vergleiche sie. Identifiziere signifikante Unterschiede sowie mögliche strukturelle Hierarchien (Trends in der Kombination von Mikro-, Meso- und Makroporen).
+2. Leite basierend auf dem Fachwissen potenzielle Struktur-Eigenschafts-Beziehungen in Bezug auf Wärmeleitfähigkeit, mechanische Festigkeit und spezifische Oberfläche ab (nicht-lineare Effekte oder Schwellenwerte sind zulässig).
+3. Generiere 3–5 innovative Hypothesen. Jede Hypothese muss enthalten: Erwartete wissenschaftliche Bedeutung, zugrundeliegender verifizierbarer Mechanismus, entscheidende steuerbare Variablen, ausführbarer Versuchs- oder Simulationsplan (inkl. faktorieller Versuchsplanung und messbarer Indikatoren).
+4. Definiere für jede Hypothese ein "hochwertiges Validierungs-Set" (Minimal-Experimente) und erkläre, wie damit alternative Mechanismen unterschieden und Unsicherheiten reduziert werden können.
+5. Falls ein physischer Maßstab fehlt: Schlage Methoden zur Identifizierung/Kalibrierung des Maßstabs vor und führe eine Sensitivitätsanalyse der Ergebnisse durch.
+
+**[Output-Format]**
+
+* **Kernpunkte des Strukturvergleichs:**
+* **Potenzielle Struktur-Eigenschafts-Beziehungen (inkl. Mechanismus-Ableitung):**
+* **Innovative Hypothesen und Validierungspläne (einzeln):**
+* **Unsicherheiten und Vorschläge für weitere Daten:**
+* **Gegebenenfalls: Mögliche Änderungen der Schlussfolgerungen nach Kalibrierung mit physischem Maßstab:**
