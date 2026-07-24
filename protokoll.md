@@ -1,7 +1,3 @@
-Hier ist die vollständige Übersetzung des chinesischen Berichts ins Deutsche.
-
----
-
 ## I. Bisherige Arbeiten
 
 Für die Datenanreicherung (Data Augmentation) wurden **SMOTE** und **Gaußsches Rauschen** eingesetzt. Anschließend wurden ein **Bayes-Klassifikator** und ein **XGBoost-Klassifikator** verwendet. Bei der Feature-Engineering-Phase wurden ausschließlich quadratische Terme (keine sonstigen komplexen Merkmale) innerhalb eines linearen Modells genutzt, ergänzt durch eine **SHAP-Analyse**.
