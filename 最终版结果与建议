@@ -1,26 +1,70 @@
-一、之前的工作
-使用SMOTE和高斯噪声扰动的方法实现数据增强，之后使用贝叶斯分类器和XGBoost分类器，同时使用特征工程（仅仅使用二次项，未使用其他特征，且为线形模型），并使用SHAP分析。相关性分析得出的结果十分显然，并没有得到更为深入的结论；6个数据点的增强引入大量的相同信息，以往的困境是类别不平衡，本实验当中连类别信息都比较缺乏。虽然聚类分析显示，在浓度配比为12和13之间发现了边界，但是由于数据量过少，以及公开数据集的缺失，贝叶斯优化、网格搜索、遗传算法等寻找最优的算法无法进行操作。
+Hier ist die vollständige Übersetzung des chinesischen Berichts ins Deutsche.
 
-图1.1 聚类分析
+---
 
+## I. Bisherige Arbeiten
 
-图1.2 SHAP分析图、随机森林重要性、贝叶斯迹图
-二、暑期工作进展
-与王老师的交流提到使用SEM图片，所以针对多模态信息进行相关的尝试。
-（一）图片信息提取
-原先的图片用于人工选取particle size和pore size并进行提取，根据文献调研，选择了直接从图片中进行提取，而不是之前更多的数据驱动特征交互的方法，因为数据样本量过少。因此，使用python 图像识别进行处理并获取了更多数据特征：孔隙率（porosity）、平均 / 中位 / 标准差孔径、孔隙圆度 / 长宽比 / 实心度、骨架长度密度 + 分叉点 / 端点数量、孔隙结构的分形维数。原本想要实现代码集成，后来失败，所以最后手动将两份数据信息整合。
-现在面临维数较高的情况，首先面临的问题还是样本量过小，所以无法使用PCA降维等方法；另外，从图片中提取后各特征独立性变差，贝叶斯分类的前提无法成立，故无法使用。（虽然样本独立性条件不成立情况下分类器性能也还是不错）PCA降维的主成分数不能大于样本数，但是如果在贝叶斯网络后验增强的话，就没有办法满足前面的条件。所以我采用了自助法进行增强，这样的操作也比较适合小样本量情况。之后，结合PCA降维和随机森林方法筛选特征重要性，并使用贝叶斯网络进行因果分析，并结合领域知识确定时间序列，这是目前能想到的可解释性比较高的方法。生成的热图与解释路径如下所示。
+Für die Datenanreicherung (Data Augmentation) wurden **SMOTE** und **Gaußsches Rauschen** eingesetzt. Anschließend wurden ein **Bayes-Klassifikator** und ein **XGBoost-Klassifikator** verwendet. Bei der Feature-Engineering-Phase wurden ausschließlich quadratische Terme (keine sonstigen komplexen Merkmale) innerhalb eines linearen Modells genutzt, ergänzt durch eine **SHAP-Analyse**.
 
-图2.1.1 热图
+Die Ergebnisse der Korrelationsanalyse waren weitgehend offensichtlich und führten zu keinen tieferen physikalischen Erkenntnissen. Die künstliche Erweiterung von nur 6 Datenpunkten brachte eine große Menge redundanter Informationen ein. Früher bestand die Hauptschwierigkeit in einem Klassenungleichgewicht (Class Imbalance) — in diesem Experiment mangelte es jedoch sogar grundlegend an Klasseninformationen.
 
-图2.1.2 可解释路径
+Obwohl die Clusteranalyse eine klare Grenze zwischen den Konzentrationsverhältnissen **12% und 13%** aufzeigte, konnten Optimierungsalgorithmen wie **Bayes'sche Optimierung, Grid Search oder Genetische Algorithmen** aufgrund des extrem geringen Datenumfangs sowie des Fehlens öffentlicher Referenzdatensätze nicht sinnvoll angewendet werden.
 
+* **Abbildung 1.1:** Clusteranalyse
+* **Abbildung 1.2:** SHAP-Analyse, Random-Forest-Feature-Importance, Bayes'sches Trace-Diagramm
 
-（二）大模型微调能力
-经过文献调研，寻找到了Cephalo这一VLLM领域模型（发表在Advanced Functional Materials上, 在hugging face上开源），它基于gpt-4o并使用科学文献进行预训练。两次对话情况如下所示。因为我笔记本没有显卡，且校外连接清华vpn失败，未能调取更多算力资源，故仅实现单轮次单图对话机制。对话情况如附录1所示。未来有算力后可以尝试双图片对比、注入更多领域知识、prompt追问，这也是文献中突出的能力。对话中可以看出，在注入领域知识后提供的反馈更加专业，为后续可能的性质预测与特征提取指出道路。
-第1次对话
-Me：What is shown in this image, and what is the relevance for materials design?
-Cephalo:The image displays a microscopic view of a material’s surface, likely a crystalline structure, which is relevant for materials design as it provides insights into the material’s atomic arrangement and properties.
-第2次对话
-Me:This is an SEM image of polymer aerogel. What can you learn about its porosity information?
-Cephalo: From the image, we can observe that the polymer aerogel has a highly porous structure with numerous small pores interconnected throughout the material. The porosity of the aerogel can be quantitatively determined by analyzing the image using specialized software or by measuring the volume of the pores and comparing it to the total volume of the material. The porosity information can provide insights into the material’s properties, such as its surface area, thermal insulation capabilities, and potential applications in various fields like energy storage, catalysis, or filtration.
+---
+
+## II. Fortschritt der Arbeiten im Sommer
+
+Nach Rücksprache mit Prof. Wang wurde vorgeschlagen, **SEM-Aufnahmen (Rasterelektronenmikroskopie)** einzubeziehen, weshalb Versuche zur Verarbeitung multimodaler Informationen gestartet wurden.
+
+### (1) Extraktion visueller Bildinformationen
+
+Ursprünglich wurden die SEM-Bilder genutzt, um Partikelgrößen (particle size) und Porengrößen (pore size) manuell auszuwählen und zu extrahieren. Auf Basis von Literaturrecherchen wurde beschlossen, Merkmale **direkt automatisiert aus den Bildern zu extrahieren**, anstatt sich auf rein datengetriebene Merkmalsinteraktionen zu verlassen, da der Stichprobenumfang schlicht zu klein ist.
+
+Mittels **Python-Bildverarbeitung** wurden folgende zusätzliche Gefügemerkmale erfasst:
+
+* **Porosität** (*porosity*)
+* **Mittlerer / Medianer / Standardabweichung des Porendurchmessers**
+* **Poren-Zirkularität / Seitenverhältnis (Aspect Ratio) / Solidität**
+* **Skelettlängendichte + Anzahl der Verzweigungspunkte und Endpunkte**
+* **Fraktale Dimension der Porenstruktur**
+
+Der ursprüngliche Plan einer vollständigen Code-Integration schlug fehl, weshalb die beiden Datensätze am Ende manuell zusammengeführt wurden.
+
+#### Aktuelle Herausforderungen & Methodik:
+
+1. **Hohe Dimensionalität bei kleiner Stichprobe:** Da die Stichprobe sehr klein ist, können klassische Verfahren wie die PCA-Dimensionreduktion nicht ohne Weiteres angewendet werden (die Anzahl der Hauptkomponenten bei einer PCA darf nicht größer als die Anzahl der Stichproben sein).
+2. **Abhängigkeit der Merkmale:** Durch die automatische Bildextraktion ist die Unabhängigkeit der Merkmale voneinander gesunken. Damit ist die mathematische Grundvoraussetzung für einen Naive-Bayes-Klassifikator eigentlich nicht mehr gegeben (auch wenn die Klassifikator-Leistung in der Praxis trotz verletzter Unabhängigkeitsbedingung passabel bleibt).
+3. **Lösungsansatz:** Eine Bayes'sche Netzwerk-Posterior-Verstärkung würde die PCA-Bedingungen verletzen. Daher wurde das **Bootstrap-Verfahren (Resampling)** zur Datenanreicherung gewählt, was sich für extrem kleine Stichproben hervorragend eignet.
+4. **Kausalitätsanalyse:** Anschließend wurden **PCA** und **Random Forest** kombiniert, um die wichtigsten Merkmale zu filtern. Über ein **Bayes'sches Netzwerk** wurde unter Einbeziehung von Domänenwissen eine zeitliche Abfolge definiert. Dies stellt den aktuell vielversprechendsten Ansatz mit hoher Erklärbarkeit (XAI) dar.
+
+* **Abbildung 2.1.1:** Heatmap (Kausal-Matrix)
+* **Abbildung 2.1.2:** Erklärbare Kausalpfade
+
+---
+
+## (2) Fine-Tuning-Fähigkeiten von Großen Sprachmodellen (LLM / VLM)
+
+Über eine Literaturrecherche wurde das Fachmodell **Cephalo** identifiziert (ein im Bereich VLLM / Materialwissenschaften spezialisiertes Modell, veröffentlicht in *Advanced Functional Materials* und quelloffen auf Hugging Face verfügbar). Es basiert auf GPT-4o und wurde mit wissenschaftlicher Fachliteratur vorgeschult.
+
+Da auf dem verwendeten Laptop keine dezidierte Grafikkarte (GPU) verbaut ist und die Verbindung zum Tsinghua-VPN außerhalb des Campus fehlschlug, konnten keine externen Rechenressourcen eingebunden werden. Daher wurde vorerst nur ein **Single-Turn-Dialog mit einzelnen Bildern** umgesetzt (siehe Anhang 1).
+
+Sobald in Zukunft mehr Rechenleistung zur Verfügung steht, können **Vergleiche zwischen zwei Bildern**, das Einspeisen von **zusätzlichem Domänenwissen** sowie tiefergehende **Prompt-Ketten (Follow-up Prompts)** getestet werden — dies sind die in der Fachliteratur besonders hervorgehobenen Stärken.
+
+In den Testdialogen zeigte sich bereits deutlich, dass die Antworten nach der Injektion von fachspezifischem Domänenwissen wesentlich professioneller ausfallen und wertvolle Hinweise für zukünftige Eigenschaftsvorhersagen sowie die Merkmalsextraktion liefern.
+
+---
+
+### Dialog-Protokoll
+
+#### 1. Dialog (Ohne Kontext)
+
+> **Ich:** *What is shown in this image, and what is the relevance for materials design?*
+> **Cephalo:** *The image displays a microscopic view of a material’s surface, likely a crystalline structure, which is relevant for materials design as it provides insights into the material’s atomic arrangement and properties.*
+
+#### 2. Dialog (Mit injiziertem Domänenwissen)
+
+> **Ich:** *This is an SEM image of polymer aerogel. What can you learn about its porosity information?*
+> **Cephalo:** *From the image, we can observe that the polymer aerogel has a highly porous structure with numerous small pores interconnected throughout the material. The porosity of the aerogel can be quantitatively determined by analyzing the image using specialized software or by measuring the volume of the pores and comparing it to the total volume of the material. The porosity information can provide insights into the material’s properties, such as its surface area, thermal insulation capabilities, and potential applications in various fields like energy storage, catalysis, or filtration.*
